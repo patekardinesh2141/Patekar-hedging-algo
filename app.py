@@ -1,81 +1,36 @@
-import streamlit as st
+    current_pnl = pos.get("last_pnl", 0.0)
 
-st.set_page_config(
-    page_title="Patekar Hedging Algo",
-    page_icon="📈",
-    layout="wide"
-)
+    x, y, z = st.columns(3)
 
-st.title("🚀 PATEKAR HEDGING ALGO")
-st.caption("Version 1.0 | Paper Trading Dashboard")
+    x.metric("Current Paper P&L", f"₹{current_pnl:,.2f}")
+    y.metric("Maximum Estimated Loss", f"₹{pos['max_loss']:,.2f}")
+    z.metric("Target", f"₹{pos['target']:,.2f}")
 
-st.sidebar.header("Strategy Settings")
+    if st.button("CLOSE PAPER POSITION", type="primary"):
+        close_position("Manual Exit", current_pnl)
+        st.rerun()
 
-market = st.sidebar.selectbox(
-    "Market",
-    ["NIFTY", "BANKNIFTY"]
-)
-
-capital = st.sidebar.number_input(
-    "Capital (₹)",
-    value=50000
-)
-
-risk = st.sidebar.number_input(
-    "Maximum Risk Per Trade (₹)",
-    value=750
-)
-
-strategy = st.sidebar.selectbox(
-    "Hedging Strategy",
-    ["Iron Condor", "Bull Call Spread",
-     "Bear Put Spread", "Custom Hedge"]
-)
-
-st.subheader("Account Overview")
-
-c1, c2, c3 = st.columns(3)
-
-c1.metric("Capital", f"₹{capital:,.0f}")
-c2.metric("Risk Per Trade", f"₹{risk:,.0f}")
-c3.metric("Trading Mode", "PAPER")
-
+# ---------- HISTORY ----------
 st.divider()
+st.subheader("📈 Trade History")
 
-st.subheader("Strategy Configuration")
+if st.session_state.history:
+    history_df = pd.DataFrame(st.session_state.history)
+    st.dataframe(
+        history_df,
+        use_container_width=True,
+        hide_index=True
+    )
 
-expiry = st.selectbox(
-    "Expiry",
-    ["Current Weekly", "Next Weekly", "Monthly"]
+    wins = sum(1 for t in st.session_state.history if t["P&L"] > 0)
+    total = len(st.session_state.history)
+
+    st.metric("Winning Trades", f"{wins}/{total}")
+    st.metric("Win Rate", f"{wins / total * 100:.1f}%")
+else:
+    st.info("No completed paper trades yet.")
+
+st.caption(
+    "Developed by Prof. Dinesh Patekar | "
+    "Manual-premium Paper Simulator | No Real Orders"
 )
-
-lots = st.number_input(
-    "Lots",
-    min_value=1,
-    max_value=10,
-    value=1
-)
-
-st.write("Selected Market:", market)
-st.write("Selected Strategy:", strategy)
-st.write("Selected Expiry:", expiry)
-st.write("Selected Lots:", lots)
-
-st.warning(
-    "Paper Trading Only. No real orders will be placed."
-)
-
-if st.button("START PAPER TRADING"):
-    st.success("Paper Trading Configuration Started!")
-
-if st.button("STOP STRATEGY"):
-    st.info("Strategy stopped.")
-
-st.divider()
-
-st.subheader("P&L Monitor")
-
-st.metric("Paper P&L", "₹0.00")
-st.metric("Open Positions", "0")
-
-st.caption("Developed by Prof. Dinesh Patekar")
